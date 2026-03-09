@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'io.freefair.lombok' version '8.0.1' // Подключение плагина Lombok
+}
+
+group = 'com.skillbox'
+version = '1.0-SNAPSHOT' // TODO: при необходимости измените версию проекта
+
+java { // TODO: замените версию Java той, что установлена у вас на компьютере
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies { // TODO: добавьте нужные зависимости
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
