@@ -1,9 +1,20 @@
 package com.skillbox.data.model;
 
-/**
- * Абстрактный класс, представляющий собой транзакцию
- */
-// TODO: Реализуйте абстрактный класс
-public abstract class Transaction  {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public abstract class Transaction {
+    private int accountId;
+    private int id;
+    private LocalDateTime dateTime;
+    private String category;
+    private double amount; // Поле, которое ищут методы getAmount()
+
+    // Абстрактный метод, который ОБЯЗАНЫ реализовать все наследники
+    public abstract double getFinalAmount();
 }

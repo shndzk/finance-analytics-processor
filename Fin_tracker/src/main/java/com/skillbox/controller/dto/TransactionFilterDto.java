@@ -1,78 +1,101 @@
 package com.skillbox.controller.dto;
 
+import com.skillbox.data.model.Commentable;
 import com.skillbox.data.model.Recurring;
 import com.skillbox.data.model.Transaction;
+import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.function.Predicate;
 
-/**
- * Класс для хранения фильтра по транзакциям.
- */
+@Setter
 public class TransactionFilterDto {
 
-    LocalDate startDate;
-    LocalDate endDate;
+    private String category;
+    private Double minAmount;
+    private Double maxAmount;
+    private String commentToken;
+    private LocalDate startDate;
+    private LocalDate endDate;
 
-    /**
-     * Создает предикат для фильтрации транзакций по диапазону дат. Также вернет те Recurring транзакции, которые будут
-     * или были выполнены в указанный диапазон дат
-     *
-     * @return Предикат для фильтрации транзакций по диапазону дат.
-     */
-    private Predicate<Transaction> datePredicate() {
+    private Predicate<Transaction> categoryPredicate() {
         return transaction -> {
-            LocalDateTime date = null; // TODO: здесь необходимо получить дату транзакции
-            LocalDateTime start = startDate == null ? null : startDate.atStartOfDay();
-            LocalDateTime end = endDate == null ? null : endDate.atStartOfDay();
-            return (start == null || !date.isBefore(start)) &&
-                    (end == null || !date.isAfter(end))
-                    || (transaction instanceof Recurring && ((Recurring) transaction).isExecutedBetween(start, end));
+            if (category == null || category.isBlank()) return true;
+            return transaction.getCategory().equalsIgnoreCase(category);
         };
     }
 
-    /**
-     * Создает предикат для фильтрации транзакций по комментарию или его части. Фильтруются только транзакции,
-     * имплементирующие интерфейс Commentable. Если токен пустой или null, то возвращается предикат, который всегда
-     * вернет true
-     *
-     * @return Предикат для фильтрации транзакций по комментарию.
-     */
-    private Predicate<Transaction> commentPredicate() {
-        // TODO: реализуйте метод, возвращающий предикат для фильтрации транзакций по комментарию
-        return null;
-    }
-
-    /**
-     * Создает предикат для фильтрации транзакций по диапазону суммы.
-     *
-     * @return Предикат для фильтрации транзакций по диапазону суммы.
-     */
     private Predicate<Transaction> amountPredicate() {
-        // TODO: реализуйте метод, возвращающий предикат для фильтрации транзакций по диапазону суммы
-        return null;
+        return transaction -> {
+            double amount = transaction.getFinalAmount();
+            boolean minOk = minAmount == null || amount >= minAmount;
+            boolean maxOk = maxAmount == null || amount <= maxAmount;
+            return minOk && maxOk;
+        };
     }
 
-    /**
-     * Создает предикат для фильтрации транзакций по категории.
-     *
-     * @return Предикат для фильтрации транзакций по категории.
-     */
-    private Predicate<Transaction> categoryPredicate() {
-        // TODO: реализуйте метод, возвращающий предикат для фильтрации транзакций по категории
-        return null;
+    private Predicate<Transaction> commentPredicate() {
+        return transaction -> {
+            if (commentToken == null || commentToken.isBlank()) return true;
+            if (transaction instanceof Commentable c) {
+                return c.getComments().stream()
+                        .anyMatch(comm -> comm.toLowerCase().contains(commentToken.toLowerCase()));
+            }
+            return false;
+        };
     }
 
-    /**
-     * Собирает предикат для фильтрации транзакции.
-     *
-     * @return Предикат для фильтрации транзакции.
-     */
+    private Predicate<Transaction> datePredicate() {
+        return transaction -> {
+            LocalDateTime transDate = transaction.getDateTime();
+            LocalDateTime start = startDate == null ? LocalDateTime.MIN : startDate.atStartOfDay();
+            LocalDateTime end = endDate == null ? LocalDateTime.MAX : endDate.atTime(23, 59, 59);
+
+            boolean inRange = !transDate.isBefore(start) && !transDate.isAfter(end);
+            boolean isRecurringInRange = (transaction instanceof Recurring r) && r.isExecutedBetween(start, end);
+
+            return inRange || isRecurringInRange;
+        };
+    }
+
     public Predicate<Transaction> buildPredicate() {
         return categoryPredicate()
                 .and(amountPredicate())
                 .and(commentPredicate())
-                .and(datePredicate())
-                .and(amountPredicate());
+                .and(datePredicate());
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        // Красивое описание категории
+        sb.append(category != null && !category.isBlank() ? "Категория: " + category : "Все категории");
+
+        // Красивое описание дат
+        if (startDate != null || endDate != null) {
+            sb.append(", Даты: ");
+            sb.append(startDate != null ? "с " + startDate : "с начала времен");
+            sb.append(endDate != null ? " по " + endDate : " по сегодня");
+        } else {
+            sb.append(", Период: весь доступный");
+        }
+
+        // Красивое описание сумм
+        if (minAmount != null || maxAmount != null) {
+            sb.append(", Сумма: ");
+            sb.append(minAmount != null ? "от " + minAmount : "-∞");
+            sb.append(maxAmount != null ? " до " + maxAmount : " до +∞");
+        } else {
+            sb.append(", Сумма: любая");
+        }
+
+        // Красивое описание комментария
+        if (commentToken != null && !commentToken.isBlank()) {
+            sb.append(", Комментарий содержит: '").append(commentToken).append("'");
+        }
+
+        return sb.toString();
     }
 }

@@ -16,12 +16,16 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
     private final TransactionService transactionService;
     private final AnalyticRepository saver;
     private final SearchMenuController searchMenuController;
+    private final GroupMenuController groupMenuController;
+    private final AggregateMenuController aggregateMenuController;
 
     public MainMenuController(TransactionService transactionService, AnalyticRepository saver) {
         super(MainMenuOption.class, "Анализ финансов");
         this.transactionService = transactionService;
         this.saver = saver;
         this.searchMenuController = new SearchMenuController();
+        this.groupMenuController = new GroupMenuController();
+        this.aggregateMenuController = new AggregateMenuController();
     }
 
     public void start() {
@@ -29,37 +33,54 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
     }
 
     private void goMainMenu() {
+        // Состояние текущего сеанса работы пользователя
         TransactionFilterDto transactionFilter = new TransactionFilterDto();
-        GroupOption groupOption = null;
-        AggregateOption aggregateOption = null;
+        GroupOption groupOption = GroupOption.WITHOUT_GROUPING; // По умолчанию без группировки
+        AggregateOption aggregateOption = AggregateOption.SUM;  // По умолчанию сумма
         Analytic analytics = null;
+
         while (true) {
-            MainMenuOption i = selectMenu();
-            switch (i) {
+            MainMenuOption selectedOption = selectMenu();
+
+            switch (selectedOption) {
                 case SEARCH_CRITERIA:
+                    // Настраиваем фильтры (даты, суммы, категории)
                     transactionFilter = searchMenuController.getTransactionFilter();
                     break;
+
                 case GROUP_OPTION:
-                    // TODO: реализуйте класс контроллера выбора поля группировки
-                    groupOption = null;
+                    // Выбираем поле группировки
+                    groupOption = groupMenuController.getGroupOption();
                     break;
+
                 case AGGREGATION_METHOD:
-                    // TODO: реализуйте класс контроллера выбора поля группировки
-                    aggregateOption = null;
+                    // Выбираем функцию (SUM, AVG, COUNT)
+                    aggregateOption = aggregateMenuController.getAggregateOption();
                     break;
+
                 case CALCULATE_ANALYTICS:
-                    analytics = transactionService.calculateAnalytics(transactionFilter,
-                            groupOption, aggregateOption);
+                    // Выполняем расчет через сервис
+                    analytics = transactionService.calculateAnalytics(
+                            transactionFilter,
+                            groupOption,
+                            aggregateOption
+                    );
+                    // Выводим результат в консоль (используется переопределенный toString в Analytic)
                     System.out.println(analytics);
                     break;
+
                 case SAVE_ANALYTICS:
+                    // Проверка: рассчитана ли уже аналитика
                     if (analytics == null) {
-                        System.err.println("Необходимо сначала рассчитать аналитику");
+                        System.err.println("Ошибка: Необходимо сначала рассчитать аналитику (пункт 4)");
                         break;
                     }
+                    // Сохраняем в JSON через репозиторий
                     saver.save(analytics);
                     break;
+
                 case EXIT:
+                    System.out.println("Завершение работы приложения. До свидания!");
                     return;
             }
         }

@@ -1,23 +1,24 @@
 plugins {
     id 'java'
-    id 'io.freefair.lombok' version '8.0.1' // Подключение плагина Lombok
+    id 'io.freefair.lombok' version '8.4'
 }
 
-group = 'com.skillbox'
-version = '1.0-SNAPSHOT' // TODO: при необходимости измените версию проекта
+// ДОБАВЬ ЭТОТ БЛОК ПЕРЕД DEPENDENCIES
+repositories {
+    mavenCentral() // Это главный склад всех Java-библиотек в мире
+}
 
-java { // TODO: замените версию Java той, что установлена у вас на компьютере
+dependencies {
+    // Работа с JSON
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+
+    // Lombok (теперь он точно скачается из mavenCentral)
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+}
+
+java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies { // TODO: добавьте нужные зависимости
-}
-
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
 }
