@@ -1,41 +1,68 @@
 package com.skillbox.controller.option;
 
 import com.skillbox.data.model.Transaction;
+import com.skillbox.data.repository.AccountRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.time.format.TextStyle;
+import java.util.Locale;
 import java.util.function.Function;
 
 @Getter
 @RequiredArgsConstructor
 public enum GroupOption implements MenuOption {
-    WITHOUT_GROUPING(0, "вернуться назад (без группировки)"),
-    BY_MONTH(1, "группировать по месяцам"),
-    BY_YEAR(2, "группировать по годам"),
-    BY_DAY_OF_WEEK(3, "группировать по дню недели"),
-    BY_CATEGORY(4, "группировать по категории"),
-    BY_INCOME_EXPENSE(5, "считать доходы и расходы"),
-    BY_ACCOUNT_TYPE(6, "группировать по типу счёта"),
-    BY_USER_ID(7, "группировать по ID пользователя");
+    WITHOUT_GROUPING(0, "без группировки", (t, repo) -> "Общий итог"),
+
+    BY_MONTH(1, "группировать по месяцам", (t, repo) ->
+            t.getDateTime().getMonth().getDisplayName(TextStyle.FULL, new Locale("ru"))),
+
+    BY_YEAR(2, "группировать по годам", (t, repo) ->
+            String.valueOf(t.getDateTime().getYear())),
+
+    BY_DAY_OF_WEEK(3, "группировать по дню недели", (t, repo) ->
+            t.getDateTime().getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("ru"))),
+
+    BY_CATEGORY(4, "группировать по категории", (t, repo) ->
+            t.getCategory()),
+
+    BY_INCOME_EXPENSE(5, "считать доходы и расходы", (t, repo) ->
+            t.getFinalAmount() >= 0 ? "Доход" : "Расход"),
+
+    BY_ACCOUNT_TYPE(6, "группировка по типу счёта", (t, repo) -> {
+        var account = repo.findById(t.getAccountId());
+        if (account == null) return "Счёт не найден (ID: " + t.getAccountId() + ")";
+        return account.getAccountType().toString();
+    }),
+
+    BY_USER_ID(7, "группировка по ID пользователя", (t, repo) -> {
+        var account = repo.findById(t.getAccountId());
+
+        return account != null
+                ? "Пользователь ID: " + account.getUserId()
+                : "Неизвестный пользователь";
+    });
 
     private final int option;
-    private final String name;
+    private final String description;
+    private final GroupClassifier classifier;
 
-    public Function<Transaction, String> getClassifier() {
-        return switch (this) {
-            case BY_MONTH -> t -> t.getDateTime().getMonth().toString();
-            case BY_YEAR -> t -> String.valueOf(t.getDateTime().getYear());
-            case BY_DAY_OF_WEEK -> t -> t.getDateTime().getDayOfWeek().toString();
-            case BY_CATEGORY -> Transaction::getCategory;
-            case BY_INCOME_EXPENSE -> t -> t.getFinalAmount() >= 0 ? "Доход" : "Расход";
-            // Для типа счета и ID пользователя в идеале нужна связь с Account,
-            // но для начала можно группировать по AccountId
-            case BY_ACCOUNT_TYPE, BY_USER_ID, WITHOUT_GROUPING -> t -> "Общий итог";
-            default -> t -> "Без группировки";
-        };
+    @Override
+    public String getName() {
+        return description;
     }
 
     @Override
     public String toStringRepresentation() {
-        return option + " — " + name;
+        return option + " — " + description;
+    }
+
+    public Function<Transaction, String> getClassifier(AccountRepository repository) {
+        return transaction -> classifier.apply(transaction, repository);
+    }
+
+    @FunctionalInterface
+    public interface GroupClassifier {
+        String apply(Transaction t, AccountRepository repo);
     }
 }

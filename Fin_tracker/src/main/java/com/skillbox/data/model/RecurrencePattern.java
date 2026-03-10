@@ -6,9 +6,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Класс, представляющий паттерн повторения транзакций.
- */
 public enum RecurrencePattern {
     HOURLY("hourly", Duration.ofHours(1)),
     DAILY("daily", Duration.ofDays(1)),

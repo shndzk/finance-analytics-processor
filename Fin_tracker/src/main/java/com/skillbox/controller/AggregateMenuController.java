@@ -8,10 +8,6 @@ public class AggregateMenuController extends AbstractMenuController<AggregateOpt
         super(AggregateOption.class, "Выберите способ агрегации транзакций:");
     }
 
-    /**
-     * Метод для запуска меню выбора агрегации.
-     * @return выбранная пользователем AggregateOption
-     */
     public AggregateOption getAggregateOption() {
         return selectMenu();
     }

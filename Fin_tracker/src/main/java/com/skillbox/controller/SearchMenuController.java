@@ -5,39 +5,35 @@ import com.skillbox.controller.option.SearchOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
-/**
- * Консольный контроллер для управления навигацией по функционалу поиска транзакций.
- */
 public class SearchMenuController extends AbstractMenuController<SearchOption> {
+
+    private TransactionFilterDto filter = new TransactionFilterDto();
 
     public SearchMenuController() {
         super(SearchOption.class, "Выберите способ поиска транзакции");
     }
 
     public TransactionFilterDto getTransactionFilter() {
-        TransactionFilterDto filter = new TransactionFilterDto();
         while (true) {
             SearchOption option = selectMenu();
             switch (option) {
                 case EXIT:
-                    // Возвращаем накопленный фильтр в главное меню
                     return filter;
                 case ALL_TRANSACTION:
-                    // Сбрасываем фильтр до пустого
                     filter = new TransactionFilterDto();
                     System.out.println("Все фильтры сброшены.");
                     break;
                 case SEARCH_BY_CATEGORY:
-                    filter = inputCategory(filter);
+                    inputCategory();
                     break;
                 case SEARCH_BY_DATES:
-                    filter = inputDates(filter);
+                    inputDates();
                     break;
                 case SEARCH_BY_AMOUNT:
-                    filter = inputAmount(filter);
+                    inputAmount();
                     break;
                 case SEARCH_BY_COMMENT:
-                    filter = inputComment(filter);
+                    inputComment();
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + option);
@@ -45,59 +41,59 @@ public class SearchMenuController extends AbstractMenuController<SearchOption> {
         }
     }
 
-    private TransactionFilterDto inputComment(TransactionFilterDto filter) {
-        System.out.print("Введите комментарий или его часть (Enter — для поиска всех): ");
+    private void inputComment() {
+        System.out.print("Введите текст для поиска в комментариях (Enter — пропустить): ");
         String comment = scanner.next().trim();
         if (!comment.isEmpty()) {
             filter.setCommentToken(comment);
+            System.out.println("Критерий поиска задан! Текст: '" + comment + "'");
         }
-        return filter;
     }
 
-    private TransactionFilterDto inputAmount(TransactionFilterDto filter) {
+    private void inputAmount() {
         try {
-            System.out.print("Введите минимальную сумму (Enter — не ограничивать): ");
+            System.out.print("Введите минимальную сумму (Enter — пропустить): ");
             String minStr = scanner.next().trim();
             if (!minStr.isEmpty()) {
                 filter.setMinAmount(Double.parseDouble(minStr));
             }
 
-            System.out.print("Введите максимальную сумму (Enter — не ограничивать): ");
+            System.out.print("Введите максимальную сумму (Enter — пропустить): ");
             String maxStr = scanner.next().trim();
             if (!maxStr.isEmpty()) {
                 filter.setMaxAmount(Double.parseDouble(maxStr));
             }
+            System.out.println("Критерий поиска задан! Диапазон сумм сохранен.");
         } catch (NumberFormatException e) {
             System.err.println("Ошибка: Введите числовое значение суммы.");
         }
-        return filter;
     }
 
-    private TransactionFilterDto inputDates(TransactionFilterDto filter) {
+    private void inputDates() {
         try {
-            System.out.print("Введите начальную дату (ГГГГ-ММ-ДД, Enter — не ограничивать): ");
+            System.out.print("Введите начальную дату (ГГГГ-ММ-ДД, Enter — пропустить): ");
             String startStr = scanner.next().trim();
             if (!startStr.isEmpty()) {
                 filter.setStartDate(LocalDate.parse(startStr));
             }
 
-            System.out.print("Введите конечную дату (ГГГГ-ММ-ДД, Enter — не ограничивать): ");
+            System.out.print("Введите конечную дату (ГГГГ-ММ-ДД, Enter — пропустить): ");
             String endStr = scanner.next().trim();
             if (!endStr.isEmpty()) {
                 filter.setEndDate(LocalDate.parse(endStr));
             }
+            System.out.println("Критерий поиска задан! Период сохранен.");
         } catch (DateTimeParseException e) {
             System.err.println("Ошибка: Неверный формат даты. Используйте ГГГГ-ММ-ДД.");
         }
-        return filter;
     }
 
-    private TransactionFilterDto inputCategory(TransactionFilterDto filter) {
-        System.out.print("Введите категорию (Enter — поиск по всем категориям): ");
+    private void inputCategory() {
+        System.out.print("Введите категорию (Enter — поиск по всем): ");
         String category = scanner.next().trim();
         if (!category.isEmpty()) {
             filter.setCategory(category);
+            System.out.println("Критерий поиска задан! Категория: '" + category + "'");
         }
-        return filter;
     }
 }

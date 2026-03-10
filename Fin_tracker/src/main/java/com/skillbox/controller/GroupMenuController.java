@@ -8,10 +8,6 @@ public class GroupMenuController extends AbstractMenuController<GroupOption> {
         super(GroupOption.class, "Выберите опцию группировки транзакции:");
     }
 
-    /**
-     * Метод для запуска меню выбора группировки.
-     * @return выбранная пользователем GroupOption
-     */
     public GroupOption getGroupOption() {
         return selectMenu();
     }

@@ -2,14 +2,17 @@ package com.skillbox.data.repository.impl;
 
 import com.skillbox.data.model.*;
 import com.skillbox.data.repository.TransactionRepository;
+import com.skillbox.exception.DataAccessException;
+import com.skillbox.exception.DataFormatException;
+import com.skillbox.exception.FileNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,21 +23,33 @@ public class FileTransactionRepository implements TransactionRepository {
     private final String fileName;
 
     @Override
-    public List<Transaction> readAll() {
+    public List<Transaction> readAll() throws DataAccessException {
+        Path path = Paths.get(fileName);
+
+        if (!Files.exists(path)) {
+            throw new FileNotFoundException(fileName);
+        }
+
         try {
-            // Читаем файл, пропускаем пустые строки и парсим каждую строку
-            return Files.lines(Paths.get(fileName))
+            return Files.lines(path)
                     .filter(line -> !line.isBlank())
-                    .map(this::parseTransaction)
+                    .map(line -> {
+                        try {
+                            return parseTransaction(line);
+                        } catch (Exception e) {
+                            throw new RuntimeException(new DataFormatException("Строка не соответствует формату: " + line, e));
+                        }
+                    })
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            System.err.println("Ошибка при чтении файла транзакций: " + e.getMessage());
-            return new ArrayList<>();
+            throw new DataAccessException("Проблема при чтении файла транзакций: " + fileName, e);
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof DataAccessException dae) throw dae;
+            throw new DataAccessException("Системная ошибка при разборе транзакций", e);
         }
     }
 
     private Transaction parseTransaction(String line) {
-        // Разделяем строку на 7 частей (6 общих полей + хвост со специфичными данными)
         String[] parts = line.split(",", 7);
 
         int accountId = Integer.parseInt(parts[0].trim());
@@ -45,7 +60,6 @@ public class FileTransactionRepository implements TransactionRepository {
         String type = parts[5].trim();
         String extraData = parts.length > 6 ? parts[6].trim() : "";
 
-        // Создаем конкретный объект в зависимости от типа
         return switch (type) {
             case "Taxable" -> {
                 TaxableTransaction t = new TaxableTransaction();
@@ -73,7 +87,7 @@ public class FileTransactionRepository implements TransactionRepository {
                 t.setComments(Arrays.asList(extraData.split(";")));
                 yield t;
             }
-            default -> { // Regular
+            default -> {
                 RegularTransaction t = new RegularTransaction();
                 fillBaseFields(t, accountId, id, dateTime, category, amount);
                 yield t;

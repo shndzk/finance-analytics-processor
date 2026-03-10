@@ -6,11 +6,10 @@ import com.skillbox.controller.option.GroupOption;
 import com.skillbox.controller.option.MainMenuOption;
 import com.skillbox.data.model.Analytic;
 import com.skillbox.data.repository.AnalyticRepository;
+import com.skillbox.exception.AppException;
 import com.skillbox.service.TransactionService;
 
-/**
- * Консольный контроллер для управления навигацией по главному меню.
- */
+
 public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
     private final TransactionService transactionService;
@@ -33,10 +32,9 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
     }
 
     private void goMainMenu() {
-        // Состояние текущего сеанса работы пользователя
         TransactionFilterDto transactionFilter = new TransactionFilterDto();
-        GroupOption groupOption = GroupOption.WITHOUT_GROUPING; // По умолчанию без группировки
-        AggregateOption aggregateOption = AggregateOption.SUM;  // По умолчанию сумма
+        GroupOption groupOption = GroupOption.WITHOUT_GROUPING;
+        AggregateOption aggregateOption = AggregateOption.SUM;
         Analytic analytics = null;
 
         while (true) {
@@ -44,39 +42,43 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
             switch (selectedOption) {
                 case SEARCH_CRITERIA:
-                    // Настраиваем фильтры (даты, суммы, категории)
                     transactionFilter = searchMenuController.getTransactionFilter();
                     break;
 
                 case GROUP_OPTION:
-                    // Выбираем поле группировки
                     groupOption = groupMenuController.getGroupOption();
                     break;
 
                 case AGGREGATION_METHOD:
-                    // Выбираем функцию (SUM, AVG, COUNT)
                     aggregateOption = aggregateMenuController.getAggregateOption();
                     break;
 
                 case CALCULATE_ANALYTICS:
-                    // Выполняем расчет через сервис
-                    analytics = transactionService.calculateAnalytics(
-                            transactionFilter,
-                            groupOption,
-                            aggregateOption
-                    );
-                    // Выводим результат в консоль (используется переопределенный toString в Analytic)
-                    System.out.println(analytics);
+                    try {
+                        analytics = transactionService.calculateAnalytics(
+                                transactionFilter,
+                                groupOption,
+                                aggregateOption
+                        );
+                        System.out.println(analytics);
+                    } catch (AppException e) {
+                        System.err.println("Ошибка аналитики: " + e.getMessage());
+                    } catch (Exception e) {
+                        System.err.println("Критический сбой: " + e.getMessage());
+                    }
                     break;
 
                 case SAVE_ANALYTICS:
-                    // Проверка: рассчитана ли уже аналитика
                     if (analytics == null) {
                         System.err.println("Ошибка: Необходимо сначала рассчитать аналитику (пункт 4)");
                         break;
                     }
-                    // Сохраняем в JSON через репозиторий
-                    saver.save(analytics);
+                    try {
+                        saver.save(analytics);
+                        System.out.println("Аналитика успешно сохранена.");
+                    } catch (AppException e) {
+                        System.err.println("Ошибка при сохранении: " + e.getMessage());
+                    }
                     break;
 
                 case EXIT:

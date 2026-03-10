@@ -1,16 +1,12 @@
 package com.skillbox.data.repository;
 
 import com.skillbox.data.model.Account;
+import com.skillbox.exception.DataAccessException;
+
 import java.util.List;
 
-/**
- * Интерфейс для чтения аккаунтов (счетов) пользователей
- */
 public interface AccountRepository {
+    List<Account> readAll() throws DataAccessException;
 
-    /**
-     * Читает все записи со счетами
-     * @return список счетов
-     */
-    List<Account> readAll();
+    Account findById(int id);
 }

@@ -19,6 +19,7 @@ public class TransactionFilterDto {
     private LocalDate startDate;
     private LocalDate endDate;
 
+
     private Predicate<Transaction> categoryPredicate() {
         return transaction -> {
             if (category == null || category.isBlank()) return true;
@@ -48,11 +49,11 @@ public class TransactionFilterDto {
 
     private Predicate<Transaction> datePredicate() {
         return transaction -> {
-            LocalDateTime transDate = transaction.getDateTime();
-            LocalDateTime start = startDate == null ? LocalDateTime.MIN : startDate.atStartOfDay();
-            LocalDateTime end = endDate == null ? LocalDateTime.MAX : endDate.atTime(23, 59, 59);
+            LocalDateTime start = (startDate == null) ? LocalDateTime.MIN : startDate.atStartOfDay();
+            LocalDateTime end = (endDate == null) ? LocalDateTime.MAX : endDate.atTime(23, 59, 59);
 
-            boolean inRange = !transDate.isBefore(start) && !transDate.isAfter(end);
+            boolean inRange = !transaction.getDateTime().isBefore(start) && !transaction.getDateTime().isAfter(end);
+
             boolean isRecurringInRange = (transaction instanceof Recurring r) && r.isExecutedBetween(start, end);
 
             return inRange || isRecurringInRange;
@@ -66,32 +67,30 @@ public class TransactionFilterDto {
                 .and(datePredicate());
     }
 
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        // Красивое описание категории
-        sb.append(category != null && !category.isBlank() ? "Категория: " + category : "Все категории");
+        sb.append(category != null && !category.isBlank() ? "Категория: '" + category + "'" : "Все категории");
 
-        // Красивое описание дат
         if (startDate != null || endDate != null) {
-            sb.append(", Даты: ");
-            sb.append(startDate != null ? "с " + startDate : "с начала времен");
-            sb.append(endDate != null ? " по " + endDate : " по сегодня");
+            sb.append(", Период: ");
+            sb.append(startDate != null ? startDate : "начала времен");
+            sb.append(" - ");
+            sb.append(endDate != null ? endDate : "сегодня");
         } else {
             sb.append(", Период: весь доступный");
         }
 
-        // Красивое описание сумм
         if (minAmount != null || maxAmount != null) {
             sb.append(", Сумма: ");
-            sb.append(minAmount != null ? "от " + minAmount : "-∞");
-            sb.append(maxAmount != null ? " до " + maxAmount : " до +∞");
+            if (minAmount != null) sb.append("от ").append(minAmount);
+            if (maxAmount != null) sb.append(" до ").append(maxAmount);
         } else {
             sb.append(", Сумма: любая");
         }
 
-        // Красивое описание комментария
         if (commentToken != null && !commentToken.isBlank()) {
             sb.append(", Комментарий содержит: '").append(commentToken).append("'");
         }

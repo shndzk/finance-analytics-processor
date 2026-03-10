@@ -6,28 +6,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public enum AccountType {
-    /**
-     * Текущий счет обычно используется для повседневных финансовых операций, таких как оплата счетов, покупки и
-     * переводы.
-     */
-    CHECKING(0),
-
-    /**
-     * Сберегательный счет предназначен для хранения сбережений и накоплений. Обычно он имеет ограниченное количество
-     * транзакций в месяц, но предлагает процентный доход на сбережения.
-     */
-    SAVINGS(1),
-
-    /**
-     * Кредитный счет представляет собой счет, на котором отражаются операции, связанные с использованием кредита.
-     * Кредитный лимит и процентные ставки играют ключевую роль для такого счета.
-     */
-    CREDIT(2);
+    CHECKING(0, "Текущий счёт"),
+    SAVINGS(1, "Сберегательный счёт"),
+    CREDIT(2, "Кредитный счёт");
 
     private final int type;
+    private final String description;
 
-    AccountType(int type) {
+    AccountType(int type, String description) {
         this.type = type;
+        this.description = description;
     }
 
     private static final Map<Integer, AccountType> MAP = Arrays
@@ -40,5 +28,10 @@ public enum AccountType {
 
     public int getType() {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 }
