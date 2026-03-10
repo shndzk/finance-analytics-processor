@@ -23,7 +23,7 @@ public class TransactionFilterDto {
     private Predicate<Transaction> categoryPredicate() {
         return transaction -> {
             if (category == null || category.isBlank()) return true;
-            return transaction.getCategory().equalsIgnoreCase(category);
+            return transaction.getCategory().equals(category);
         };
     }
 
