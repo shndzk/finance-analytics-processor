@@ -6,7 +6,8 @@ public enum SearchOption implements MenuOption {
     SEARCH_BY_CATEGORY("поиск по категориям"),
     SEARCH_BY_DATES("поиск по диапазону дат"),
     SEARCH_BY_AMOUNT("поиск по диапазону суммы транзакций"),
-    SEARCH_BY_COMMENT("поиск по комментарию (для транзакций, поддерживающих комментарии)");
+    SEARCH_BY_COMMENT("поиск по комментарию (для транзакций, поддерживающих комментарии)"),
+    SEARCH_BY_ACCOUNT_TYPE("искать по типу счёта");
 
     private final String name;
 

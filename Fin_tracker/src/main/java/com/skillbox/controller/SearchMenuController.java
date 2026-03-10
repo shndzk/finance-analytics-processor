@@ -2,6 +2,8 @@ package com.skillbox.controller;
 
 import com.skillbox.controller.dto.TransactionFilterDto;
 import com.skillbox.controller.option.SearchOption;
+import com.skillbox.data.model.AccountType;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
@@ -34,6 +36,9 @@ public class SearchMenuController extends AbstractMenuController<SearchOption> {
                     break;
                 case SEARCH_BY_COMMENT:
                     inputComment();
+                    break;
+                case SEARCH_BY_ACCOUNT_TYPE:
+                    inputAccountType();
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + option);
@@ -94,6 +99,23 @@ public class SearchMenuController extends AbstractMenuController<SearchOption> {
         if (!category.isEmpty()) {
             filter.setCategory(category);
             System.out.println("Критерий поиска задан! Категория: '" + category + "'");
+        }
+    }
+
+    private void inputAccountType() {
+        System.out.println("Выберите тип счёта:");
+        for (AccountType type : AccountType.values()) {
+            System.out.println(type.getType() + " — " + type);
+        }
+        System.out.print("Введите код типа (Enter — все): ");
+        String input = scanner.next().trim();
+        if (!input.isEmpty()) {
+            try {
+                filter.setAccountType(AccountType.of(Integer.parseInt(input)));
+                System.out.println("Фильтр по типу счёта установлен!");
+            } catch (Exception e) {
+                System.err.println("Ошибка: Неверный код типа.");
+            }
         }
     }
 }

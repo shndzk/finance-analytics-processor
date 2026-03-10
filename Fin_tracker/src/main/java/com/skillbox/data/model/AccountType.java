@@ -18,6 +18,10 @@ public enum AccountType {
         this.description = description;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     private static final Map<Integer, AccountType> MAP = Arrays
             .stream(AccountType.values())
             .collect(Collectors.toMap(AccountType::getType, Function.identity()));

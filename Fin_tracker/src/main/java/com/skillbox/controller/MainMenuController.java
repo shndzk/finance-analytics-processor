@@ -46,7 +46,7 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
                     break;
 
                 case GROUP_OPTION:
-                    groupOption = groupMenuController.getGroupOption();
+                    groupOption = groupMenuController.getGroupOption(transactionFilter);
                     break;
 
                 case AGGREGATION_METHOD:

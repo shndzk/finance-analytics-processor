@@ -1,13 +1,17 @@
 package com.skillbox.controller.dto;
 
+import com.skillbox.data.model.AccountType;
 import com.skillbox.data.model.Commentable;
 import com.skillbox.data.model.Recurring;
 import com.skillbox.data.model.Transaction;
+import com.skillbox.data.repository.AccountRepository;
 import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.function.Predicate;
+
+import static javax.management.Query.and;
 
 @Setter
 public class TransactionFilterDto {
@@ -18,6 +22,17 @@ public class TransactionFilterDto {
     private String commentToken;
     private LocalDate startDate;
     private LocalDate endDate;
+    private AccountType accountType;
+    private AccountType targetAccountType;
+
+    public Predicate<Transaction> accountTypePredicate(AccountRepository accountRepository) {
+        return transaction -> {
+            if (targetAccountType == null) return true;
+
+            var account = accountRepository.findById(transaction.getAccountId());
+            return account != null && account.getAccountType() == targetAccountType;
+        };
+    }
 
 
     private Predicate<Transaction> categoryPredicate() {
@@ -60,11 +75,20 @@ public class TransactionFilterDto {
         };
     }
 
-    public Predicate<Transaction> buildPredicate() {
+    private Predicate<Transaction> filterByAccountType(AccountRepository repository) {
+        return transaction -> {
+            if (accountType == null) return true;
+            var account = repository.findById(transaction.getAccountId());
+            return account != null && account.getAccountType() == targetAccountType;
+        };
+    }
+
+    public Predicate<Transaction> buildPredicate(AccountRepository repo) {
         return categoryPredicate()
                 .and(amountPredicate())
                 .and(commentPredicate())
-                .and(datePredicate());
+                .and(datePredicate())
+                .and(filterByAccountType(repo));
     }
 
 
@@ -73,6 +97,7 @@ public class TransactionFilterDto {
         StringBuilder sb = new StringBuilder();
 
         sb.append(category != null && !category.isBlank() ? "Категория: '" + category + "'" : "Все категории");
+        sb.append(", Тип счёта: ").append(accountType != null ? accountType : "любой");
 
         if (startDate != null || endDate != null) {
             sb.append(", Период: ");
