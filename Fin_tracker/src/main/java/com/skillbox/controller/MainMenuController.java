@@ -9,7 +9,6 @@ import com.skillbox.data.repository.AnalyticRepository;
 import com.skillbox.exception.AppException;
 import com.skillbox.service.TransactionService;
 
-
 public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
     private final TransactionService transactionService;
@@ -32,7 +31,9 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
     }
 
     private void goMainMenu() {
+        // 1. Создаем объект фильтра ОДИН раз. Он будет накапливать все критерии.
         TransactionFilterDto transactionFilter = new TransactionFilterDto();
+
         GroupOption groupOption = GroupOption.WITHOUT_GROUPING;
         AggregateOption aggregateOption = AggregateOption.SUM;
         Analytic analytics = null;
@@ -42,10 +43,13 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
             switch (selectedOption) {
                 case SEARCH_CRITERIA:
+                    // Обновляем существующий фильтр (категории, даты, суммы)
                     transactionFilter = searchMenuController.getTransactionFilter();
                     break;
 
                 case GROUP_OPTION:
+                    // 2. Передаем ЭТОТ ЖЕ объект фильтра в меню группировки.
+                    // Там внутри (при выборе пункта 6) запишется выбранный тип счета.
                     groupOption = groupMenuController.getGroupOption(transactionFilter);
                     break;
 
@@ -55,6 +59,7 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
                 case CALCULATE_ANALYTICS:
                     try {
+                        // 3. На расчет уходит объект фильтра со всеми накопленными данными.
                         analytics = transactionService.calculateAnalytics(
                                 transactionFilter,
                                 groupOption,
@@ -65,24 +70,25 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
                         System.err.println("Ошибка аналитики: " + e.getMessage());
                     } catch (Exception e) {
                         System.err.println("Критический сбой: " + e.getMessage());
+                        e.printStackTrace(); // Для отладки, если что-то пойдет не так
                     }
                     break;
 
                 case SAVE_ANALYTICS:
                     if (analytics == null) {
-                        System.err.println("Ошибка: Необходимо сначала рассчитать аналитику (пункт 4)");
+                        System.err.println("Ошибка: Сначала рассчитайте аналитику (пункт 4)");
                         break;
                     }
                     try {
                         saver.save(analytics);
-                        System.out.println("Аналитика успешно сохранена.");
+                        System.out.println("Аналитика успешно сохранена в файл.");
                     } catch (AppException e) {
                         System.err.println("Ошибка при сохранении: " + e.getMessage());
                     }
                     break;
 
                 case EXIT:
-                    System.out.println("Завершение работы приложения. До свидания!");
+                    System.out.println("Завершение работы. До свидания!");
                     return;
             }
         }

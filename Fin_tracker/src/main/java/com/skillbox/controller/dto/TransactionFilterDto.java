@@ -11,8 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.function.Predicate;
 
-import static javax.management.Query.and;
-
 @Setter
 public class TransactionFilterDto {
 
@@ -22,22 +20,12 @@ public class TransactionFilterDto {
     private String commentToken;
     private LocalDate startDate;
     private LocalDate endDate;
-    private AccountType accountType;
-    private AccountType targetAccountType;
-
-    public Predicate<Transaction> accountTypePredicate(AccountRepository accountRepository) {
-        return transaction -> {
-            if (targetAccountType == null) return true;
-
-            var account = accountRepository.findById(transaction.getAccountId());
-            return account != null && account.getAccountType() == targetAccountType;
-        };
-    }
-
+    private AccountType targetAccountType; // Поле для фильтрации по типу счета
 
     private Predicate<Transaction> categoryPredicate() {
         return transaction -> {
             if (category == null || category.isBlank()) return true;
+            // ТЗ: Регистр символов учитывается (используем equals вместо equalsIgnoreCase)
             return transaction.getCategory().equals(category);
         };
     }
@@ -68,42 +56,39 @@ public class TransactionFilterDto {
             LocalDateTime end = (endDate == null) ? LocalDateTime.MAX : endDate.atTime(23, 59, 59);
 
             boolean inRange = !transaction.getDateTime().isBefore(start) && !transaction.getDateTime().isAfter(end);
-
             boolean isRecurringInRange = (transaction instanceof Recurring r) && r.isExecutedBetween(start, end);
 
             return inRange || isRecurringInRange;
         };
     }
 
-    private Predicate<Transaction> filterByAccountType(AccountRepository repository) {
+    // Новый предикат для связи транзакции с типом счета через репозиторий
+    private Predicate<Transaction> accountTypePredicate(AccountRepository repo) {
         return transaction -> {
-            if (accountType == null) return true;
-            var account = repository.findById(transaction.getAccountId());
+            if (targetAccountType == null) return true;
+            var account = repo.findById(transaction.getAccountId());
             return account != null && account.getAccountType() == targetAccountType;
         };
     }
 
+    // Главный метод сборки (теперь принимает репозиторий)
     public Predicate<Transaction> buildPredicate(AccountRepository repo) {
         return categoryPredicate()
                 .and(amountPredicate())
                 .and(commentPredicate())
                 .and(datePredicate())
-                .and(filterByAccountType(repo));
+                .and(accountTypePredicate(repo));
     }
-
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
         sb.append(category != null && !category.isBlank() ? "Категория: '" + category + "'" : "Все категории");
-        sb.append(", Тип счёта: ").append(accountType != null ? accountType : "любой");
 
         if (startDate != null || endDate != null) {
-            sb.append(", Период: ");
-            sb.append(startDate != null ? startDate : "начала времен");
-            sb.append(" - ");
-            sb.append(endDate != null ? endDate : "сегодня");
+            sb.append(", Период: ").append(startDate != null ? startDate : "начала времен")
+                    .append(" - ").append(endDate != null ? endDate : "сегодня");
         } else {
             sb.append(", Период: весь доступный");
         }
@@ -117,7 +102,14 @@ public class TransactionFilterDto {
         }
 
         if (commentToken != null && !commentToken.isBlank()) {
-            sb.append(", Комментарий содержит: '").append(commentToken).append("'");
+            sb.append(", Комментарий: '").append(commentToken).append("'");
+        }
+
+        // Вывод выбранного типа счета в отчет
+        if (targetAccountType != null) {
+            sb.append(", Счёт: ").append(targetAccountType.getDescription());
+        } else {
+            sb.append(", Счета: все");
         }
 
         return sb.toString();

@@ -111,7 +111,7 @@ public class SearchMenuController extends AbstractMenuController<SearchOption> {
         String input = scanner.next().trim();
         if (!input.isEmpty()) {
             try {
-                filter.setAccountType(AccountType.of(Integer.parseInt(input)));
+                filter.setTargetAccountType(AccountType.of(Integer.parseInt(input)));
                 System.out.println("Фильтр по типу счёта установлен!");
             } catch (Exception e) {
                 System.err.println("Ошибка: Неверный код типа.");

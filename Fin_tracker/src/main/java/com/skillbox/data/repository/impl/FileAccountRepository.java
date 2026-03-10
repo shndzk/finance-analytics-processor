@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 public class FileAccountRepository implements AccountRepository {
 
     private final String fileName;
-
     private Map<Integer, Account> cache = null;
 
     @Override
@@ -32,10 +31,17 @@ public class FileAccountRepository implements AccountRepository {
         }
 
         try {
-            return Files.lines(path)
+            List<Account> accounts = Files.lines(path)
                     .filter(line -> !line.isBlank())
                     .map(this::parseAccount)
+                    .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toList());
+
+            // Инициализируем кэш сразу после успешного чтения всех данных
+            this.cache = accounts.stream()
+                    .collect(Collectors.toMap(Account::getAccountId, Function.identity(), (a1, a2) -> a1));
+
+            return accounts;
         } catch (IOException e) {
             throw new DataAccessException("Ошибка при чтении файла аккаунтов: " + fileName, e);
         }
@@ -43,30 +49,36 @@ public class FileAccountRepository implements AccountRepository {
 
     @Override
     public Account findById(int id) {
+        // Если кэш еще не создан, принудительно читаем файл
         if (cache == null) {
             try {
-                List<Account> allAccounts = readAll();
-                cache = allAccounts.stream()
-                        .collect(Collectors.toMap(Account::getAccountId, Function.identity()));
+                readAll();
             } catch (DataAccessException e) {
-                System.err.println("Ошибка инициализации кэша аккаунтов: " + e.getMessage());
+                System.err.println("Критическая ошибка: не удалось загрузить аккаунты для поиска по ID: " + e.getMessage());
                 return null;
             }
         }
-        return cache.get(id);
+        return cache != null ? cache.get(id) : null;
     }
 
     private Account parseAccount(String line) {
         try {
-            String[] parts = line.split(",");
+            // ТЗ (стр. 4): Убираем комментарии после символа #, если они есть
+            String cleanLine = line.split("#")[0].trim();
+            String[] parts = cleanLine.split(",");
+
             if (parts.length < 3) return null;
 
             int accountId = Integer.parseInt(parts[0].trim());
-            AccountType type = AccountType.of(Integer.parseInt(parts[1].trim()));
+            int typeInt = Integer.parseInt(parts[1].trim());
             int userId = Integer.parseInt(parts[2].trim());
+
+            // Используем ваш метод of для сопоставления цифры 0, 1, 2 с Enum
+            AccountType type = AccountType.of(typeInt);
 
             return new AccountImpl(accountId, type, userId);
         } catch (Exception e) {
+            System.err.println("Ошибка парсинга строки аккаунта: " + line);
             return null;
         }
     }
