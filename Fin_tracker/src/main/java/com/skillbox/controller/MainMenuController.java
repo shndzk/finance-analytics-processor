@@ -31,7 +31,6 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
     }
 
     private void goMainMenu() {
-        // 1. Создаем объект фильтра ОДИН раз. Он будет накапливать все критерии.
         TransactionFilterDto transactionFilter = new TransactionFilterDto();
 
         GroupOption groupOption = GroupOption.WITHOUT_GROUPING;
@@ -43,13 +42,10 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
             switch (selectedOption) {
                 case SEARCH_CRITERIA:
-                    // Обновляем существующий фильтр (категории, даты, суммы)
                     transactionFilter = searchMenuController.getTransactionFilter();
                     break;
 
                 case GROUP_OPTION:
-                    // 2. Передаем ЭТОТ ЖЕ объект фильтра в меню группировки.
-                    // Там внутри (при выборе пункта 6) запишется выбранный тип счета.
                     groupOption = groupMenuController.getGroupOption(transactionFilter);
                     break;
 
@@ -59,7 +55,6 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
 
                 case CALCULATE_ANALYTICS:
                     try {
-                        // 3. На расчет уходит объект фильтра со всеми накопленными данными.
                         analytics = transactionService.calculateAnalytics(
                                 transactionFilter,
                                 groupOption,
@@ -70,7 +65,7 @@ public class MainMenuController extends AbstractMenuController<MainMenuOption> {
                         System.err.println("Ошибка аналитики: " + e.getMessage());
                     } catch (Exception e) {
                         System.err.println("Критический сбой: " + e.getMessage());
-                        e.printStackTrace(); // Для отладки, если что-то пойдет не так
+                        e.printStackTrace();
                     }
                     break;
 

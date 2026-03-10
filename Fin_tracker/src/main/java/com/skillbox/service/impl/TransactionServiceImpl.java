@@ -30,35 +30,27 @@ public class TransactionServiceImpl implements TransactionService {
                                        GroupOption group,
                                        AggregateOption aggregate) throws AppException {
 
-        // 1. Загружаем все транзакции из репозитория
         List<Transaction> transactions = transactionRepository.readAll();
 
-        // 2. Создаем финальный фильтр.
-        // Передаем accountRepository, чтобы фильтр мог сопоставить ID счета с его типом (0, 1, 2)
         Predicate<Transaction> finalFilter = filter.buildPredicate(accountRepository);
 
-        // 3. Определяем функцию группировки (классификатор)
         Function<Transaction, String> classifier = (group != null && group != GroupOption.WITHOUT_GROUPING)
                 ? group.getClassifier(accountRepository)
                 : t -> "Общий итог";
 
-        // 4. Определяем способ агрегации (сумма, среднее или количество)
-        // Выносим в переменную, чтобы избежать ошибки компиляции (wildcard capture)
         Collector<Transaction, ?, Double> collector = (aggregate != null)
                 ? aggregate.getCollector()
                 : AggregateOption.SUM.getCollector();
 
-        // 5. Выполняем анализ через Stream API
         Map<String, Double> resultData = transactions.stream()
                 .filter(finalFilter)
                 .collect(Collectors.groupingBy(classifier, collector));
 
-        // 6. Формируем и возвращаем объект аналитики для вывода или сохранения
         return Analytic.builder()
                 .date(LocalDateTime.now())
                 .groupOption(group != null ? group.getDescription() : "Без группировки")
                 .aggregateOption(aggregate != null ? aggregate.getName() : "Сумма")
-                .filter(filter.toString()) // Здесь будет выведен ваш настроенный фильтр
+                .filter(filter.toString())
                 .data(resultData)
                 .build();
     }

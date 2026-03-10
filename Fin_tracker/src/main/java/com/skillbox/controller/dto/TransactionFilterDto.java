@@ -20,12 +20,11 @@ public class TransactionFilterDto {
     private String commentToken;
     private LocalDate startDate;
     private LocalDate endDate;
-    private AccountType targetAccountType; // Поле для фильтрации по типу счета
+    private AccountType targetAccountType;
 
     private Predicate<Transaction> categoryPredicate() {
         return transaction -> {
             if (category == null || category.isBlank()) return true;
-            // ТЗ: Регистр символов учитывается (используем equals вместо equalsIgnoreCase)
             return transaction.getCategory().equals(category);
         };
     }
@@ -62,7 +61,6 @@ public class TransactionFilterDto {
         };
     }
 
-    // Новый предикат для связи транзакции с типом счета через репозиторий
     private Predicate<Transaction> accountTypePredicate(AccountRepository repo) {
         return transaction -> {
             if (targetAccountType == null) return true;
@@ -71,7 +69,6 @@ public class TransactionFilterDto {
         };
     }
 
-    // Главный метод сборки (теперь принимает репозиторий)
     public Predicate<Transaction> buildPredicate(AccountRepository repo) {
         return categoryPredicate()
                 .and(amountPredicate())
@@ -105,7 +102,6 @@ public class TransactionFilterDto {
             sb.append(", Комментарий: '").append(commentToken).append("'");
         }
 
-        // Вывод выбранного типа счета в отчет
         if (targetAccountType != null) {
             sb.append(", Счёт: ").append(targetAccountType.getDescription());
         } else {

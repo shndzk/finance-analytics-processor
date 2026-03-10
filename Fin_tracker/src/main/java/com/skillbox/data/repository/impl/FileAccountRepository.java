@@ -37,7 +37,6 @@ public class FileAccountRepository implements AccountRepository {
                     .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toList());
 
-            // Инициализируем кэш сразу после успешного чтения всех данных
             this.cache = accounts.stream()
                     .collect(Collectors.toMap(Account::getAccountId, Function.identity(), (a1, a2) -> a1));
 
@@ -49,7 +48,6 @@ public class FileAccountRepository implements AccountRepository {
 
     @Override
     public Account findById(int id) {
-        // Если кэш еще не создан, принудительно читаем файл
         if (cache == null) {
             try {
                 readAll();
@@ -63,7 +61,6 @@ public class FileAccountRepository implements AccountRepository {
 
     private Account parseAccount(String line) {
         try {
-            // ТЗ (стр. 4): Убираем комментарии после символа #, если они есть
             String cleanLine = line.split("#")[0].trim();
             String[] parts = cleanLine.split(",");
 
@@ -73,7 +70,6 @@ public class FileAccountRepository implements AccountRepository {
             int typeInt = Integer.parseInt(parts[1].trim());
             int userId = Integer.parseInt(parts[2].trim());
 
-            // Используем ваш метод of для сопоставления цифры 0, 1, 2 с Enum
             AccountType type = AccountType.of(typeInt);
 
             return new AccountImpl(accountId, type, userId);
