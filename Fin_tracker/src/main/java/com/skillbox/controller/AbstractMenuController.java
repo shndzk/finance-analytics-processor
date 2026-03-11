@@ -2,15 +2,13 @@ package com.skillbox.controller;
 
 import com.skillbox.controller.option.MenuOption;
 import com.skillbox.controller.option.OptionUtils;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Абстрактный класс контроллеров. Содержит общий функционал вывода меню и получения ввода пользователя
- */
 public abstract class AbstractMenuController<E extends Enum<E> & MenuOption> {
 
     protected final Scanner scanner;
@@ -29,40 +27,40 @@ public abstract class AbstractMenuController<E extends Enum<E> & MenuOption> {
         this.scanner = new Scanner(System.in).useDelimiter("\n");
     }
 
-    /**
-     * Выводит меню и ждет ввод пользователя.
-     *
-     * @return выбранную опцию пункта меню
-     */
     protected E selectMenu() {
         int option;
 
         while (true) {
             System.out.println(description);
-            System.out.println(menu);
+            System.out.print(menu);
             System.out.print("Введите нужную опцию и нажмите Enter: ");
 
-            option = scanner.nextInt();
-            if (numOptions.contains(option)) {
-                break;
+            if (!scanner.hasNext()) {
+                continue;
             }
-            System.err.println("Выбрана неверная опция!\n"
+
+            String input = scanner.next().trim();
+
+            try {
+                option = Integer.parseInt(input);
+
+                if (numOptions.contains(option)) {
+                    break;
+                }
+            } catch (NumberFormatException e) {
+            }
+
+            System.err.println("\nВыбрана неверная опция! '" + input + "'\n"
                     + "Попробуйте заново.\n");
         }
+
         return OptionUtils.of(options, option);
     }
 
-    /**
-     * Возвращает строковое представление меню.
-     *
-     * @param enumClass класс перечисления.
-     * @return строковое представление
-     */
     private String toMenu(Class<E> enumClass) {
         return Arrays.stream(enumClass.getEnumConstants())
                 .sorted(Comparator.comparingInt(MenuOption::getOption))
                 .map(MenuOption::toStringRepresentation)
                 .collect(Collectors.joining(System.lineSeparator(), System.lineSeparator(), System.lineSeparator()));
     }
-
 }
